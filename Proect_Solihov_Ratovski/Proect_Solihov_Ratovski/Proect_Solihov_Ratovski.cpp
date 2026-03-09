@@ -7,27 +7,25 @@
 #include <string>
 
 CRITICAL_SECTION g_cs;
-HANDLE hGameFinish; // Событие на конец тренировки
+HANDLE hGameFinish;
 
-// Глобальные переменные
 volatile int g_time = 0;
 volatile int g_errors = 0;
-volatile int g_words_done = 0; //Cчетчик слов
-volatile int g_chars_typed = 0; // Счетчик нажатых знаков
-volatile bool g_running = true; // 
+volatile int g_words_done = 0;
+volatile int g_chars_typed = 0;
+volatile bool g_running = true;
 volatile bool g_start_game = false;
 
-const int TARGET_WORDS = 3; // Колличество слов которые мы будем вводить 
+const int TARGET_WORDS = 10;
 
-// Массив слов
 std::string arrslova[300] = {
     "яблоко", "банан", "оранжевый", "красный", "капитал", "щель",
     "плотина", "противогаз", "плотина", "лицей", "маячок", "цифра",
-    "петрушка", "маникюр", " автодорога", "карандаш", "фуражка", "штанга",
+    "петрушка", "маникюр", "автодорога", "карандаш", "фуражка", "штанга",
     "амбал", "жить", "жизнь", "живой", "живность", "жир", "жирный", "жирность", "жимолость",
     "сторожить", "положить", "тишина", "шина", "машина", "старшина", "шипеть", "вершина",
     "шиповник", "сшить", "спешить", "отдушина", "дом", "окно", "стол", "стул", "книга", "ручка",
-    "тетрадь", "школa", "улица", "город", "деревня", "лес", "река", "море", "океан", "гора", "поле",
+    "тетрадь", "школа", "улица", "город", "деревня", "лес", "река", "море", "океан", "гора", "поле",
     "небо", "солнце", "луна", "звезда", "облако", "дождь", "снег", "ветер", "огонь", "вода", "земля",
     "воздух", "камень", "дерево", "цветок", "трава", "лист", "корень", "ветка", "плод", "семя", "сад",
     "огород", "кот", "собака", "лошадь", "корова", "овца", "свинья", "курица", "утка", "гусь", "индюк",
@@ -54,7 +52,6 @@ std::string arrslova[300] = {
     "молоко", "сыр", "хлеб", "мясо", "рыба", "яйцо", "овощи", "фрукты", "ягоды","грибы", "орехи", "мед"
 };
 
-// Очередь из 3 слов и буфер ввода
 std::string g_queue[3];
 std::string g_input = "";
 
@@ -62,7 +59,6 @@ int GetRandomIndex(int max) {
     return GetTickCount() % max;
 }
 
-// Перемещение курсора чтобы мы могли писать поверх старого в консоли
 void SetCursor(int x, int y) {
     COORD coord = { (SHORT)x, (SHORT)y };
     SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
@@ -105,21 +101,21 @@ DWORD WINAPI Slova(LPVOID lpParam) {
             continue;
         }
 
+        // Отрисовка
         SetCursor(0, 0);
         std::cout << "Слова: " << g_queue[0] << " | " << g_queue[1] << " | " << g_queue[2] << "   " << std::endl;
         std::cout << "Ввод:  " << g_input << "                                      " << std::endl;
         std::cout << "Прогресс: " << g_words_done << "/" << TARGET_WORDS << "   Ошибки: " << g_errors << "   Время: " << g_time << "     " << std::endl;
 
         int ch = _getch();
-
         EnterCriticalSection(&g_cs);
 
-        // Считаем каждый нажатый символ 
+        // Считаем нажатия видимых символов
         if (ch >= 32) {
             g_chars_typed++;
         }
 
-        if (ch == 32 || ch == 13) { // Пробел или Enter
+        if (ch == 32 || ch == 13) { // Пробел/Enter - финиш слова
             if (g_input == g_queue[0]) {
                 g_words_done++;
                 g_queue[0] = g_queue[1];
@@ -134,24 +130,28 @@ DWORD WINAPI Slova(LPVOID lpParam) {
             }
             else {
                 g_errors++;
-                g_input = "";
             }
         }
         else if (ch == 8) { // Backspace
-            if (!g_input.empty()) {
-                g_input.erase(g_input.length() - 1);
-            }
+            g_errors++;
         }
-        else if (ch >= 32) { // Символ
-            g_input += (char)ch;
+        else if (ch >= 32) { // Буква - проверка по позиции
+            // Если буква совпадает с ожидаемой буквой в слове - принимаем
+            if (g_input.length() < g_queue[0].length() && (char)ch == g_queue[0][g_input.length()]) {
+                g_input += (char)ch;
+            }
+            else {
+                // Неверная буква - ошибка, символ отбрасываем
+                g_errors++;
+            }
         }
         LeaveCriticalSection(&g_cs);
     }
     return 0;
 }
 
-
 int main() {
+    // Настройка кодировки для ввода русских букв
     SetConsoleOutputCP(1251);
     SetConsoleCP(1251);
     setlocale(0, "rus");
@@ -159,7 +159,7 @@ int main() {
     InitializeCriticalSection(&g_cs);
     hGameFinish = CreateEvent(NULL, TRUE, FALSE, NULL);
 
-    std::cout << "Приветствуем вас на клавиатурной гонке нажмите на любую клавишу чтобы начать гонку" << std::endl;
+    std::cout << "Приветствуем вас на клавиатурном тренажере нажмите на любую клавишу чтобы начать тренировку" << std::endl;
     _getch();
     system("cls");
 
@@ -182,7 +182,6 @@ int main() {
     std::cout << "Нажато знаков: " << g_chars_typed << std::endl;
 
     if (g_time > 0) {
-        // Формула: (знаки * 60) / время
         int cpm = (g_chars_typed * 60) / g_time;
         std::cout << "Скорость: " << cpm << " зн/мин" << std::endl;
     }
