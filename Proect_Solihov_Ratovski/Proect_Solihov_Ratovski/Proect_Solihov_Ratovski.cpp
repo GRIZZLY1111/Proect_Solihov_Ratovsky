@@ -16,7 +16,7 @@ volatile int g_chars_typed = 0;
 volatile bool g_running = true;
 volatile bool g_start_game = false;
 
-const int TARGET_WORDS = 10;
+const int TARGET_WORDS = 20;
 
 std::string arrslova[300] = {
     "яблоко", "банан", "оранжевый", "красный", "капитал", "щель",
@@ -105,16 +105,20 @@ DWORD WINAPI Slova(LPVOID lpParam) {
         SetCursor(0, 0);
         std::cout << "Слова: " << g_queue[0] << " | " << g_queue[1] << " | " << g_queue[2] << "   " << std::endl;
         std::cout << "Ввод:  " << g_input << "                                      " << std::endl;
-        std::cout << "Прогресс: " << g_words_done << "/" << TARGET_WORDS << "   Ошибки: " << g_errors << "   Время: " << g_time << "     " << std::endl;
+        std::cout << "Прогресс: " << g_words_done << "/" << TARGET_WORDS << "   Ошибки: " << g_errors << "   Время: " << g_time << "   Нажато знаков: " <<g_chars_typed<< "     " << std::endl;
 
         int ch = _getch();
         EnterCriticalSection(&g_cs);
 
         // Считаем нажатия видимых символов
-        if (ch >= 32) {
+        if (ch==0 ) {// значения префиксы
+        }
+        else if (_kbhit()) {// для буквы А так как его возвращаемое значение 224 а это префикс некоторых символов
+        }
+        else{
             g_chars_typed++;
         }
-
+        std::cout << ch;
         if (ch == 32 || ch == 13) { // Пробел/Enter - финиш слова
             if (g_input == g_queue[0]) {
                 g_words_done++;
@@ -132,28 +136,17 @@ DWORD WINAPI Slova(LPVOID lpParam) {
                 g_errors++;
             }
         }
-        else if (ch == 8) { // Backspace
-            g_errors++;
-        }
-        else if (ch == 220) { //функция _getch возвращает значения два раза для стрелок
-            g_errors++;
-        }
         else if (ch == 0) {
-            g_errors++;
         }
-        else if (ch == 72 || ch == 80 || ch == 75 || ch == 77 ) {//стрелки верх вниз влево вправо соответственно
+        else if (_kbhit()) {
         }
-        else if (ch == 71 || ch == 73 || ch == 79 || ch == 81 || ch == 82) {// Home, PgUp, End, PgDn, Ins, соответственно
-        }
-        else if (ch == 83) { // Delete
-        }
-        else if (ch >= 32) { // Буква - проверка по позиции
+        else if (ch >= 1) { // Буква - проверка по позиции
             // Если буква совпадает с ожидаемой буквой в слове - принимаем
             if (g_input.length() < g_queue[0].length() && (char)ch == g_queue[0][g_input.length()]) {
                 g_input += (char)ch;
             }
             else {
-                // Неверная буква - ошибка, символ отбрасываем
+                // Неверная буква - ошибка, символ не выводим на экран
                 g_errors++;
             }
         }
