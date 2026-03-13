@@ -135,6 +135,18 @@ DWORD WINAPI Slova(LPVOID lpParam) {
         else if (ch == 8) { // Backspace
             g_errors++;
         }
+        else if (ch == 220) { //функция _getch возвращает значения два раза для стрелок
+            g_errors++;
+        }
+        else if (ch == 0) {
+            g_errors++;
+        }
+        else if (ch == 72 || ch == 80 || ch == 75 || ch == 77 ) {//стрелки верх вниз влево вправо соответственно
+        }
+        else if (ch == 71 || ch == 73 || ch == 79 || ch == 81 || ch == 82) {// Home, PgUp, End, PgDn, Ins, соответственно
+        }
+        else if (ch == 83) { // Delete
+        }
         else if (ch >= 32) { // Буква - проверка по позиции
             // Если буква совпадает с ожидаемой буквой в слове - принимаем
             if (g_input.length() < g_queue[0].length() && (char)ch == g_queue[0][g_input.length()]) {
