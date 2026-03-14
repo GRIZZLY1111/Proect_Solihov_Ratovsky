@@ -118,7 +118,6 @@ DWORD WINAPI Slova(LPVOID lpParam) {
         else{
             g_chars_typed++;
         }
-        std::cout << ch;
         if (ch == 32 || ch == 13) { // Пробел/Enter - финиш слова
             if (g_input == g_queue[0]) {
                 g_words_done++;
